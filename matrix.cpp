@@ -31,38 +31,43 @@ int main(int argc, const char* argv[]){
 	double avg=0;
 	double sd =0;
 	int sample_size =0;
+	double *timeFull;
 	
-	c_array = initialize(c_array,size);
-	a_array = initialize(a_array,size);
-	b_array = initialize(b_array,size);
+	do{
+		cout << "matrix size: "<<size << endl; 
+		c_array = initialize(c_array,size);
+		a_array = initialize(a_array,size);
+		b_array = initialize(b_array,size);
 	
-	fillValues(a_array,size);
-	fillValues(b_array,size);
+		fillValues(a_array,size);
+		fillValues(b_array,size);
 
-	for(int i=0; i<def_sample; i++){
-		start = omp_get_wtime();
-		c_array = multiply(a_array,b_array,c_array,size);
-		end = omp_get_wtime();
-		timeTaken[i] = (end-start);		
-	}
+		for(int i=0; i<def_sample; i++){
+			start = omp_get_wtime();
+			c_array = multiply(a_array,b_array,c_array,size);
+			end = omp_get_wtime();
+			timeTaken[i] = (end-start);		
+		}
 	
-	avg = findAverage(timeTaken, def_sample);
-	sd = findSD(timeTaken, def_sample, avg);
-	sample_size = findSampleSize(sd, avg);
-	double timeFull[sample_size];
-	cout << "AVG" << avg << endl;
-	cout << "SD" << sd << endl;
-	cout << "SA S" << sample_size << endl;
+		avg = findAverage(timeTaken, def_sample);
+		sd = findSD(timeTaken, def_sample, avg);
+		sample_size = findSampleSize(sd, avg);
+		timeFull = new double [sample_size];
+		cout << "mean              : " << avg << endl;
+		cout << "standard deviation: " << sd << endl;
+		cout << "Sample Size       : " << sample_size << endl;
 	
-	for(int i=0; i<sample_size; i++){
-		start = omp_get_wtime();
-		c_array = multiply(a_array,b_array,c_array,size);
-		end = omp_get_wtime();
-		timeFull[i] = (end-start);		
-	}
+		for(int i=0; i<sample_size; i++){
+			start = omp_get_wtime();
+			c_array = multiply(a_array,b_array,c_array,size);
+			end = omp_get_wtime();
+			timeFull[i] = (end-start);		
+		}
 	
-	avg = findAverage(timeFull, sample_size);
-	cout <<" Final"<<avg << endl;
+		avg = findAverage(timeFull, sample_size);
+		cout <<"Average time: "<<avg << endl <<endl;
+		size+=100;
+	}while(size<=1000);
 
 }
 

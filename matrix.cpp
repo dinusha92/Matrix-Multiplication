@@ -2,13 +2,22 @@
 #include <chrono>
 #include <time.h>
 #include <omp.h>
+#include <math.h>
+
 using namespace std::chrono;
 using namespace std;
+
+#define def_sample 5
 
 void fillValues(double** array, int size);
 double** initialize(double** array, int size);
 void display(double** array,int size);
 double** multiply(double** array_a, double** array_b,double** array_c, int size);
+
+double findAverage(double *time, int size);
+int findSampleSize(double std, double average);
+double findSD(double* data, int n, double mean);
+
 int main(int argc, const char* argv[]){
 
 	int size;
@@ -18,6 +27,10 @@ int main(int argc, const char* argv[]){
 	double** c_array;
 	double** a_array;
 	double** b_array;
+	double timeTaken[def_sample];
+	double avg=0;
+	double sd =0;
+	int sample_size =0;
 	
 	c_array = initialize(c_array,size);
 	a_array = initialize(a_array,size);
@@ -25,19 +38,31 @@ int main(int argc, const char* argv[]){
 	
 	fillValues(a_array,size);
 	fillValues(b_array,size);
-	//cout <<"size "<< size<<endl;
-	//cout <<"random " << 10*((double) rand() / (double)RAND_MAX)<<endl;
-	//cout <<"A"<<endl;
-	//display(a_array,size);
-	//cout <<"B" <<endl;
-	//display(b_array,size);
-	start = omp_get_wtime();
-	c_array = multiply(a_array,b_array,c_array,size);
-	end = omp_get_wtime();
-	cout << "time taken " << (end - start);
-	//cout <<" C = A x B" << endl;
-	//display(c_array,size);
 
+	for(int i=0; i<def_sample; i++){
+		start = omp_get_wtime();
+		c_array = multiply(a_array,b_array,c_array,size);
+		end = omp_get_wtime();
+		timeTaken[i] = (end-start);		
+	}
+	
+	avg = findAverage(timeTaken, def_sample);
+	sd = findSD(timeTaken, def_sample, avg);
+	sample_size = findSampleSize(sd, avg);
+	double timeFull[sample_size];
+	cout << "AVG" << avg << endl;
+	cout << "SD" << sd << endl;
+	cout << "SA S" << sample_size << endl;
+	
+	for(int i=0; i<sample_size; i++){
+		start = omp_get_wtime();
+		c_array = multiply(a_array,b_array,c_array,size);
+		end = omp_get_wtime();
+		timeFull[i] = (end-start);		
+	}
+	
+	avg = findAverage(timeFull, sample_size);
+	cout <<" Final"<<avg << endl;
 
 }
 
@@ -85,17 +110,17 @@ void fillValues(double** array, int size){
 }
 
 // method to find average
-float findAverage(float* time, int size) {
-    float total = 0;
+double findAverage(double* time, int size) {
+    double total = 0;
     for (int i = 0; i < size; i++) {
         total += time[i];
     }
-    float average = total / size;
+    double average = total / size;
     return average;
 }
 
 //method to find the sample size
-int findSampleSize(float std, float average) {
+int findSampleSize(double std, double average) {
     double sample;
     double base = (100 * 1.96 * std) / (5 * average);
     sample = pow(base, 2);
@@ -103,16 +128,13 @@ int findSampleSize(float std, float average) {
 }
 
 //method to find standard deviation
-float std(float* data, int n) {
-    float mean = 0.0, sum_deviation = 0.0;
+double findSD(double* data, int n , double mean) {
+    double deviation = 0.0;
     int i;
-    for (i = 0; i < n; ++i) {
-        mean += data[i];
-    }
-    mean = mean / n;
+
     for (i = 0; i < n; ++i)
-        sum_deviation += (data[i] - mean) * (data[i] - mean);
-    return sqrt(sum_deviation / (n - 1));
+        deviation += (data[i] - mean) * (data[i] - mean);
+    return sqrt(deviation / (n - 1));
 }
 
 

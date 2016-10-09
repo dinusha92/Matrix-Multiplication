@@ -7,7 +7,7 @@
 using namespace std::chrono;
 using namespace std;
 
-#define def_sample  5
+#define def_sample  20
 void fillValues(double** array, int size);
 double** initialize(double** array, int size);
 void display(double** array,int size);
@@ -16,16 +16,13 @@ double** multiply(double** array_a, double** array_b,double** array_c, int size)
 double findAverage(double *time, int size);
 int findSampleSize(double std, double average);
 double findSD(double* data, int n, double mean);
+double runOperation(int size);
 
 int main(int argc, const char* argv[]){
 	int size;
 	size = atoi(argv[1]);
 	double start;
 	double end;
-	
-	double** c_array;
-	double** a_array;
-	double** b_array;
 	
 	double timeTaken[def_sample];
 	double avg=0;
@@ -35,33 +32,21 @@ int main(int argc, const char* argv[]){
 	
 	do{
 		cout << "matrix size: "<<size << endl; 
-		c_array = initialize(c_array,size);
-		a_array = initialize(a_array,size);
-		b_array = initialize(b_array,size);
-	
-		fillValues(a_array,size);
-		fillValues(b_array,size);
-
+		
 		for(int i=0; i<def_sample; i++){
-			start = omp_get_wtime();
-			c_array = multiply(a_array,b_array,c_array,size);
-			end = omp_get_wtime();
-			timeTaken[i] = (end-start);		
+			timeTaken[i]= runOperation(size);	
 		}
 	
-		avg = findAverage(timeTaken, def_sample);
-		sd = findSD(timeTaken, def_sample, avg);
-		sample_size = findSampleSize(sd, avg);
+		avg = findAverage(timeTaken, def_sample);   //average of the sample
+		sd = findSD(timeTaken, def_sample, avg);	//standard deviation 
+		sample_size = findSampleSize(sd, avg);		//sample size
 		timeFull = new double [sample_size];
 		cout << "mean              : " << avg << endl;
 		cout << "standard deviation: " << sd << endl;
 		cout << "Sample Size       : " << sample_size << endl;
 	
 		for(int i=0; i<sample_size; i++){
-			start = omp_get_wtime();
-			c_array = multiply(a_array,b_array,c_array,size);
-			end = omp_get_wtime();
-			timeFull[i] = (end-start);		
+			timeFull[i]= runOperation(size);	
 		}
 	
 		avg = findAverage(timeFull, sample_size);
@@ -70,9 +55,32 @@ int main(int argc, const char* argv[]){
 	}while(size <= 1000);
 }
 
+//method to run the multiplication,initialization,population,delete arrays 
+double runOperation(int size){
+	double** c_array;
+	double** a_array;
+	double** b_array;
+	c_array = initialize(c_array,size);
+	a_array = initialize(a_array,size);
+	b_array = initialize(b_array,size);
+
+	fillValues(a_array,size);
+	fillValues(b_array,size);
+
+	double start = omp_get_wtime();
+	c_array = multiply(a_array,b_array,c_array,size);
+	double end = omp_get_wtime();
+
+	delete c_array;
+	delete a_array;
+	delete b_array;	
+	
+	return end-start;
+}
+
 //method to multiply the matrices A and B
 double** multiply(double** array_a, double** array_b,double** array_c, int size){
-	#pragma omp parallel for
+	#pragma omp parallel for				//parallel library using
 	for(int i=0; i < size ; i++){
 		for(int j=0; j < size; j++){
 			for(int k=0; k< size; k++){
@@ -106,6 +114,7 @@ void display(double** array,int size){
 void fillValues(double** array, int size){
 	double value = 0;
 	//double** arr = array;
+	srand(time(NULL));
   for(int i=0;i <size; i++){
 	for(int j=0; j< size; j++){
 		value = 10*((double) rand() / (double)RAND_MAX);
